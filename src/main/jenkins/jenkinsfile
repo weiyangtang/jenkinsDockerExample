@@ -1,0 +1,49 @@
+#!/usr/bin/env groovy
+
+final def releaseTag = (env.TAG_NAME ?: env.BRANCH_NAME).replace("/", "-")
+
+pipeline {
+
+    agent any
+
+    tools {
+        maven 'maven3'
+    }
+
+
+    stages {
+        stage("maven 编译") {
+            steps {
+                echo "releaseTag:${releaseTag}"
+                echo 'Building..'
+                sh 'mvn clean package -Dmaven.test.skip'
+            }
+        }
+        stage('镜像编译') {
+            steps {
+                echo 'image build'
+                sh "docker build -f ./src/main/docker/Dockerfile -t tangweiyang/jenkinsdocker:${releaseTag} . "
+            }
+        }
+        stage('镜像发布') {
+            steps {
+                echo 'image push docker hub'
+                sh "docker push tangweiyang/jenkinsdocker:${releaseTag} "
+            }
+        }
+        stage('停止旧容器') {
+            steps {
+                sh '''             
+                        docker rm -f jenkinsdocker &> /dev/null                  
+                   '''
+            }
+        }
+        stage('部署') {
+            steps {
+                echo 'deloy'
+                sh "docker run -it -d -p 8081:80 --name springbootdemo tangweiyang/springbootdemo:${releaseTag}"
+            }
+        }
+    }
+}
+
