@@ -41,7 +41,7 @@ pipeline {
         stage('部署') {
             steps {
                 echo 'deloy'
-                sh "docker run -it -d -p 8081:80 --name springbootdemo tangweiyang/springbootdemo:${releaseTag}"
+                sh "docker run -it -d -p 8081:80 --name jenkinsdocker tangweiyang/jenkinsdocker:${releaseTag}"
             }
         }
     }
